@@ -1,11 +1,10 @@
 // ============ SUPABASE CONFIGURATION ============
-// Using window.supabase from the CDN script tag
 const SUPABASE_URL = 'https://lkvewvtoaautmdcryvya.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxrdmV3dnRvYWF1dG1kY3J5dnlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4NjMwMDUsImV4cCI6MjA5MDQzOTAwNX0.JWbLZMKYp29aSPP2HoDqTJWPB6fwAxzFYymswed_eG0';
 
-// Check if supabase is available from CDN
 if (typeof window.supabase === 'undefined') {
-  console.error('Supabase client not loaded. Please check your internet connection.');
+  console.error('Supabase client not loaded');
+  alert('Supabase client failed to load. Please refresh the page.');
 }
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -17,12 +16,14 @@ let counterInterval;
 
 // ============ INITIALIZATION ============
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('DOM loaded, initializing...');
   createParticles();
   createFloatingHearts();
   startDeathCounter();
   checkAuthState();
   setupEventListeners();
   setupTabNavigation();
+  setupCheckboxLogic();
 });
 
 // ============ BACKGROUND ANIMATIONS ============
@@ -62,7 +63,6 @@ function startDeathCounter() {
   const counterElement = document.getElementById('liveCounter');
   if (!counterElement) return;
   
-  // Initialize with random starting number
   deathCounter = Math.floor(Math.random() * 5000) + 12000;
   counterElement.textContent = deathCounter.toLocaleString();
   
@@ -72,12 +72,53 @@ function startDeathCounter() {
   }, 3000);
 }
 
+// ============ CHECKBOX LOGIC ============
+function setupCheckboxLogic() {
+  // Family history "None" logic
+  const familyNone = document.querySelector('#familyHistoryGroup input[value="none_family"]');
+  if (familyNone) {
+    familyNone.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.querySelectorAll('#familyHistoryGroup input').forEach(cb => {
+          if (cb.value !== 'none_family') cb.checked = false;
+        });
+      }
+    });
+  }
+  
+  // Surgery "None" logic
+  const surgeryNone = document.querySelector('#surgeryGroup input[value="none_surgery"]');
+  if (surgeryNone) {
+    surgeryNone.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        document.querySelectorAll('#surgeryGroup input').forEach(cb => {
+          if (cb.value !== 'none_surgery') cb.checked = false;
+        });
+      }
+    });
+  }
+  
+  // If any other checkbox is checked, uncheck "None"
+  document.querySelectorAll('#familyHistoryGroup input[value!="none_family"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked && familyNone) familyNone.checked = false;
+    });
+  });
+  
+  document.querySelectorAll('#surgeryGroup input[value!="none_surgery"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      if (cb.checked && surgeryNone) surgeryNone.checked = false;
+    });
+  });
+}
+
 // ============ AUTH STATE MANAGEMENT ============
 async function checkAuthState() {
   const storedUser = localStorage.getItem('premed_user');
   if (storedUser) {
     try {
       currentUser = JSON.parse(storedUser);
+      console.log('Found stored user:', currentUser.email);
       showDashboard();
       loadDashboardData();
     } catch (e) {
@@ -87,59 +128,111 @@ async function checkAuthState() {
   }
 }
 
-async function registerUser(email, password, username, fullName, age) {
-  const passwordHash = await hashPassword(password);
+async function registerUser(formData) {
+  console.log('Attempting to register user:', formData.email);
+  
+  const passwordHash = await hashPassword(formData.password);
   const verificationToken = generateToken();
+  const userId = crypto.randomUUID ? crypto.randomUUID() : generateToken();
+  
+  // Collect family medical history
+  const familyHistory = Array.from(document.querySelectorAll('#familyHistoryGroup input:checked'))
+    .filter(cb => cb.value !== 'none_family')
+    .map(cb => cb.value);
+  
+  // Collect surgical history
+  const surgeries = Array.from(document.querySelectorAll('#surgeryGroup input:checked'))
+    .filter(cb => cb.value !== 'none_surgery')
+    .map(cb => cb.value);
+  
+  const userData = {
+    id: userId,
+    email: formData.email,
+    username: formData.username,
+    password_hash: passwordHash,
+    verification_token: verificationToken,
+    email_verified: false,
+    full_name: formData.fullName || null,
+    age: formData.age ? parseInt(formData.age) : null,
+    phone: formData.phone || null,
+    date_of_birth: formData.dateOfBirth || null,
+    relationship_status: formData.relationshipStatus || null,
+    living_situation: formData.livingSituation || null,
+    education_level: formData.educationLevel || null,
+    emergency_contact_name: formData.emergencyName || null,
+    emergency_contact_phone: formData.emergencyPhone || null,
+    emergency_contact_relationship: formData.emergencyRelationship || null,
+    family_medical_history: familyHistory.length ? familyHistory : null,
+    surgical_history: surgeries.length ? surgeries : null,
+    exercise_frequency: formData.exerciseFrequency || null,
+    diet_type: formData.dietType || null,
+    sleep_hours: formData.sleepHours ? parseInt(formData.sleepHours) : null,
+    smoking_status: formData.smokingStatus || null,
+    alcohol_consumption: formData.alcoholConsumption || null,
+    support_system: formData.supportSystem || null,
+    primary_concern: formData.primaryConcern || null,
+    medical_goals: formData.medicalGoals || null,
+    profile_completed: true,
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  };
+  
+  console.log('Inserting user with comprehensive medical profile');
   
   const { data, error } = await supabaseClient
     .from('users')
-    .insert([{
-      email: email,
-      username: username,
-      password_hash: passwordHash,
-      verification_token: verificationToken,
-      email_verified: false,
-      full_name: fullName || null,
-      age: age ? parseInt(age) : null,
-      created_at: new Date().toISOString()
-    }])
+    .insert([userData])
     .select();
   
   if (error) {
+    console.error('Supabase insert error:', error);
     if (error.code === '23505') {
       throw new Error('Username or email already exists');
     }
     throw error;
   }
   
-  // Store pending verification
+  console.log('User registered successfully');
+  
   localStorage.setItem('pending_verification', JSON.stringify({
-    email: email,
+    email: formData.email,
     token: verificationToken,
     timestamp: Date.now()
   }));
   
-  return { email, verificationToken };
+  return { email: formData.email, verificationToken };
 }
 
 async function loginUser(email, password) {
+  console.log('Attempting login for:', email);
+  
   const passwordHash = await hashPassword(password);
   
   const { data, error } = await supabaseClient
     .from('users')
     .select('*')
     .eq('email', email)
-    .single();
+    .maybeSingle();
   
-  if (error || !data) throw new Error('Invalid email or password');
+  if (error) {
+    console.error('Login query error:', error);
+    throw new Error('Database error. Please try again.');
+  }
   
-  // Verify password
+  if (!data) {
+    throw new Error('Invalid email or password');
+  }
+  
   if (data.password_hash !== passwordHash) {
     throw new Error('Invalid email or password');
   }
   
-  if (!data.email_verified) throw new Error('Please verify your email first');
+  if (!data.email_verified) {
+    throw new Error('Please verify your email first. Check your inbox.');
+  }
   
+  console.log('Login successful for:', email);
   currentUser = data;
   localStorage.setItem('premed_user', JSON.stringify(data));
   return data;
@@ -183,14 +276,20 @@ function showDashboard() {
     const welcomeSpan = document.getElementById('welcomeName');
     const profileName = document.getElementById('profileName');
     const profileEmail = document.getElementById('profileEmail');
-    const profileFullName = document.getElementById('profileFullName');
-    const profileAge = document.getElementById('profileAge');
+    const profileDetails = document.getElementById('profileDetails');
     
     if (welcomeSpan) welcomeSpan.textContent = currentUser.full_name || currentUser.username;
     if (profileName) profileName.textContent = currentUser.full_name || currentUser.username;
     if (profileEmail) profileEmail.textContent = currentUser.email;
-    if (profileFullName) profileFullName.value = currentUser.full_name || '';
-    if (profileAge) profileAge.value = currentUser.age || '';
+    
+    if (profileDetails) {
+      let detailsHtml = '';
+      if (currentUser.phone) detailsHtml += `<p><i class="fas fa-phone"></i> ${escapeHtml(currentUser.phone)}</p>`;
+      if (currentUser.date_of_birth) detailsHtml += `<p><i class="fas fa-birthday-cake"></i> DOB: ${currentUser.date_of_birth}</p>`;
+      if (currentUser.relationship_status) detailsHtml += `<p><i class="fas fa-heart"></i> ${currentUser.relationship_status.replace('_', ' ')}</p>`;
+      if (currentUser.education_level) detailsHtml += `<p><i class="fas fa-graduation-cap"></i> ${escapeHtml(currentUser.education_level)}</p>`;
+      profileDetails.innerHTML = detailsHtml || '<p>Complete your profile to see more details</p>';
+    }
   }
 }
 
@@ -206,6 +305,7 @@ function showCreationPage() {
 
 // ============ DASHBOARD DATA LOADING ============
 async function loadDashboardData() {
+  console.log('Loading dashboard data...');
   await loadModules();
   await loadForumTopics();
   await loadUserProgress();
@@ -222,7 +322,13 @@ async function loadModules() {
   const modulesGrid = document.getElementById('modulesGrid');
   if (!modulesGrid) return;
   
-  if (error || !data || data.length === 0) {
+  if (error) {
+    console.error('Error loading modules:', error);
+    modulesGrid.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading modules</p>';
+    return;
+  }
+  
+  if (!data || data.length === 0) {
     modulesGrid.innerHTML = '<p style="text-align: center; color: #64748b;">No modules available yet. Check back soon!</p>';
     return;
   }
@@ -267,7 +373,13 @@ async function loadForumTopics() {
   const forumContainer = document.getElementById('forumTopics');
   if (!forumContainer) return;
   
-  if (error || !data || data.length === 0) {
+  if (error) {
+    console.error('Error loading forum topics:', error);
+    forumContainer.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading discussions</p>';
+    return;
+  }
+  
+  if (!data || data.length === 0) {
     forumContainer.innerHTML = '<p style="text-align: center; color: #64748b;">No discussions yet. Be the first to start one!</p>';
     return;
   }
@@ -277,7 +389,7 @@ async function loadForumTopics() {
       <div class="topic-info">
         <h4>${escapeHtml(topic.title)}</h4>
         <div class="topic-meta">
-          <span><i class="fas fa-user"></i> ${escapeHtml(topic.user_id || 'Anonymous')}</span>
+          <span><i class="fas fa-user"></i> Student</span>
           <span><i class="fas fa-clock"></i> ${new Date(topic.created_at).toLocaleDateString()}</span>
           <span><i class="fas fa-tag"></i> ${topic.category || 'General'}</span>
         </div>
@@ -327,9 +439,9 @@ async function getUserPostCount() {
 
 function loadRecentActivity() {
   const activities = [
-    { icon: 'fa-graduation-cap', text: 'Started Introduction to Anatomy module', time: '2 hours ago' },
-    { icon: 'fa-comment', text: 'Commented on "Future of Medicine" discussion', time: '1 day ago' },
-    { icon: 'fa-trophy', text: 'Earned "First Steps" badge', time: '3 days ago' }
+    { icon: 'fa-graduation-cap', text: 'Completed medical profile registration', time: 'Just now' },
+    { icon: 'fa-heartbeat', text: 'Joined PreMed Explorer community', time: 'Just now' },
+    { icon: 'fa-star-of-life', text: 'Started your journey to save lives', time: 'Welcome!' }
   ];
   
   const activityList = document.getElementById('recentActivityList');
@@ -346,11 +458,11 @@ function loadRecentActivity() {
 
 // ============ MODULE FUNCTIONS ============
 window.startModule = function(moduleId) {
-  alert(`📚 Module ${moduleId} would open here.\n\nThis would include:\n• Video lessons\n• Interactive quizzes\n• Medical case studies\n• Discussion forums\n• Progress tracking\n\nComing soon!`);
+  alert(`📚 Learning Module Coming Soon!\n\nThis module will include:\n• Video lessons from medical experts\n• Interactive quizzes\n• Real medical case studies\n• Discussion with peers\n• Progress tracking\n\nGet ready to start your medical journey!`);
 }
 
 window.viewTopic = function(topicId) {
-  alert(`💬 Topic ${topicId} would open here.\n\nThis would show:\n• Full discussion thread\n• Replies from other students\n• Option to reply\n• Medical resources\n• Expert insights\n\nComing soon!`);
+  alert(`💬 Discussion Forum Coming Soon!\n\nFeatures coming:\n• Full discussion threads\n• Reply to other students\n• Share medical resources\n• Ask questions to mentors\n• Earn badges for participation\n\nStart thinking about what medical topics interest you!`);
 }
 
 // ============ EVENT LISTENERS ============
@@ -360,24 +472,57 @@ function setupEventListeners() {
   if (registerForm) {
     registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const fullName = document.getElementById('fullName').value.trim();
-      const age = document.getElementById('age').value;
+      
+      const formData = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        fullName: document.getElementById('fullName').value.trim(),
+        age: document.getElementById('age').value,
+        phone: document.getElementById('phone').value.trim(),
+        dateOfBirth: document.getElementById('dateOfBirth').value,
+        relationshipStatus: document.getElementById('relationshipStatus').value,
+        livingSituation: document.getElementById('livingSituation').value,
+        educationLevel: document.getElementById('educationLevel').value.trim(),
+        emergencyName: document.getElementById('emergencyName').value.trim(),
+        emergencyPhone: document.getElementById('emergencyPhone').value.trim(),
+        emergencyRelationship: document.getElementById('emergencyRelationship').value.trim(),
+        exerciseFrequency: document.getElementById('exerciseFrequency').value,
+        dietType: document.getElementById('dietType').value,
+        sleepHours: document.getElementById('sleepHours').value,
+        smokingStatus: document.getElementById('smokingStatus').value,
+        alcoholConsumption: document.getElementById('alcoholConsumption').value,
+        supportSystem: document.getElementById('supportSystem').value.trim(),
+        primaryConcern: document.getElementById('primaryConcern').value.trim(),
+        medicalGoals: document.getElementById('medicalGoals').value.trim()
+      };
+      
+      if (!formData.username || !formData.email || !formData.password) {
+        showMessage('Please fill in all required fields', 'error');
+        return;
+      }
+      
+      if (formData.password.length < 6) {
+        showMessage('Password must be at least 6 characters', 'error');
+        return;
+      }
+      
+      if (formData.age && (formData.age < 13 || formData.age > 19)) {
+        showMessage('Age must be between 13 and 19', 'error');
+        return;
+      }
       
       const submitBtn = document.getElementById('submitBtn');
-      if (!submitBtn) return;
-      
       const originalText = submitBtn.innerHTML;
-      submitBtn.innerHTML = '<div class="spinner"></div> Creating account...';
+      submitBtn.innerHTML = '<div class="spinner"></div> Creating your medical profile...';
       submitBtn.disabled = true;
       
       try {
-        await registerUser(email, password, username, fullName, age);
-        showVerificationPage(email);
+        await registerUser(formData);
+        showVerificationPage(formData.email);
         showMessage('Account created! Check your email for verification.', 'success');
       } catch (error) {
+        console.error('Registration error:', error);
         showMessage(error.message, 'error');
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
@@ -436,6 +581,10 @@ function setupEventListeners() {
   const newTopicBtn = document.getElementById('newTopicBtn');
   if (newTopicBtn) {
     newTopicBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        showMessage('Please login first to create a discussion', 'error');
+        return;
+      }
       const modal = document.getElementById('newTopicModal');
       if (modal) modal.classList.add('active');
     });
@@ -455,12 +604,17 @@ function setupEventListeners() {
   if (newTopicForm) {
     newTopicForm.addEventListener('submit', async (e) => {
       e.preventDefault();
+      if (!currentUser) {
+        showMessage('Please login first', 'error');
+        return;
+      }
+      
       const title = document.getElementById('topicTitle').value;
       const content = document.getElementById('topicContent').value;
       const category = document.getElementById('topicCategory').value;
       
-      if (!currentUser) {
-        showMessage('Please login first', 'error');
+      if (!title || !content) {
+        showMessage('Please fill in all fields', 'error');
         return;
       }
       
@@ -475,48 +629,13 @@ function setupEventListeners() {
         }]);
       
       if (error) {
-        showMessage('Error posting topic', 'error');
+        console.error('Error posting topic:', error);
+        showMessage('Error posting topic. Please try again.', 'error');
       } else {
         showMessage('Topic posted successfully!', 'success');
         document.getElementById('newTopicModal').classList.remove('active');
         newTopicForm.reset();
         loadForumTopics();
-      }
-    });
-  }
-  
-  // Profile update
-  const profileForm = document.getElementById('profileUpdateForm');
-  if (profileForm) {
-    profileForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!currentUser) return;
-      
-      const fullName = document.getElementById('profileFullName').value;
-      const age = document.getElementById('profileAge').value;
-      const bio = document.getElementById('profileBio').value;
-      
-      const { error } = await supabaseClient
-        .from('users')
-        .update({ 
-          full_name: fullName, 
-          age: age ? parseInt(age) : null, 
-          bio: bio 
-        })
-        .eq('id', currentUser.id);
-      
-      if (!error) {
-        currentUser.full_name = fullName;
-        currentUser.age = age;
-        localStorage.setItem('premed_user', JSON.stringify(currentUser));
-        showMessage('Profile updated successfully!', 'success');
-        
-        const welcomeSpan = document.getElementById('welcomeName');
-        const profileName = document.getElementById('profileName');
-        if (welcomeSpan) welcomeSpan.textContent = fullName || currentUser.username;
-        if (profileName) profileName.textContent = fullName || currentUser.username;
-      } else {
-        showMessage('Error updating profile', 'error');
       }
     });
   }
@@ -553,8 +672,7 @@ function setupTabNavigation() {
 function showMessage(message, type) {
   const container = document.getElementById('formMessages');
   if (!container) {
-    // Fallback to alert if container not found
-    alert(message);
+    console.log(`${type}: ${message}`);
     return;
   }
   
