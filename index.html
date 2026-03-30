@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>PreMed Nexus | Future Healers of Tomorrow</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+<!-- Animated Background Particles -->
+<div class="particles-container" id="particles"></div>
+
+<!-- Main Application Container -->
+<div id="app">
+  <!-- Account Creation Page -->
+  <div id="creationPage" class="page active">
+    <div class="split-layout">
+      <!-- Left: Impact Story Section -->
+      <div class="impact-story">
+        <div class="story-content">
+          <div class="global-counter">
+            <div class="counter-number" id="liveCounter">0</div>
+            <div class="counter-label">children lost today</div>
+            <div class="counter-sub">every 3 seconds, a preventable death</div>
+          </div>
+
+          <div class="floating-hearts" id="floatingHearts"></div>
+
+          <div class="impact-quote">
+            <i class="fas fa-quote-left"></i>
+            <p>In the time you've been reading this, another child's heartbeat has stopped. <span class="highlight">But you're choosing to be the one who changes that.</span></p>
+          </div>
+
+          <div class="hero-stat">
+            <div class="stat-item">
+              <div class="stat-number" id="dailyDeaths">15,000</div>
+              <div class="stat-desc">children under 5 die DAILY</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <div class="stat-number">70%</div>
+              <div class="stat-desc">preventable with basic care</div>
+            </div>
+          </div>
+
+          <div class="call-to-action">
+            <div class="hand-holding">
+              <i class="fas fa-hand-holding-heart"></i>
+              <i class="fas fa-baby"></i>
+            </div>
+            <p>Every great healer started with one decision: <strong>to learn. to act. to save.</strong></p>
+            <div class="mission-badge">
+              <i class="fas fa-graduation-cap"></i>
+              <span>Join 10,000+ future medical professionals</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Registration Form -->
+      <div class="registration-form">
+        <div class="form-card">
+          <div class="form-header">
+            <div class="logo-animation">
+              <i class="fas fa-heartbeat"></i>
+            </div>
+            <h1>Start Your Journey</h1>
+            <p>You're not just creating an account. You're choosing to become part of the solution.</p>
+          </div>
+
+          <div id="formMessages"></div>
+
+          <form id="registerForm">
+            <div class="input-group floating">
+              <input type="text" id="username" required>
+              <label>Username</label>
+              <i class="fas fa-user"></i>
+            </div>
+
+            <div class="input-group floating">
+              <input type="email" id="email" required>
+              <label>Email Address</label>
+              <i class="fas fa-envelope"></i>
+            </div>
+
+            <div class="input-group floating">
+              <input type="password" id="password" required>
+              <label>Password (min. 6 characters)</label>
+              <i class="fas fa-lock"></i>
+            </div>
+
+            <div class="input-group floating">
+              <input type="text" id="fullName">
+              <label>Full Name (optional)</label>
+              <i class="fas fa-user-md"></i>
+            </div>
+
+            <div class="input-group floating">
+              <input type="number" id="age" min="13" max="19">
+              <label>Age (13-19)</label>
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+
+            <button type="submit" class="btn-hero" id="submitBtn">
+              <span class="btn-text">Create Account & Start Saving Lives</span>
+              <span class="btn-icon"><i class="fas fa-arrow-right"></i></span>
+            </button>
+          </form>
+
+          <div class="form-footer">
+            <p>Already have an account? <a href="#" id="loginLink">Sign in</a></p>
+            <div class="trust-badge">
+              <i class="fas fa-shield-alt"></i>
+              <span>Your data is encrypted and secure</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Waiting Page -->
+  <div id="verificationPage" class="page">
+    <div class="verification-container">
+      <div class="verification-card animate-in">
+        <div class="envelope-animation">
+          <i class="fas fa-envelope-open-text"></i>
+          <div class="pulse-ring"></div>
+        </div>
+        
+        <h1>You're Almost There, Future Healer</h1>
+        
+        <p>We've sent a verification email to <strong id="verificationEmailDisplay"></strong></p>
+        
+        <div class="waiting-message">
+          <div class="loading-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <p>Waiting for you to verify...</p>
+        </div>
+        
+        <div class="inspirational-message">
+          <i class="fas fa-star-of-life"></i>
+          <p>"The first step in saving lives is showing up. You just did."</p>
+          <small>— Every doctor remembers their first day</small>
+        </div>
+        
+        <div class="action-buttons">
+          <button id="resendEmailBtn" class="btn-outline">
+            <i class="fas fa-redo-alt"></i> Resend Email
+          </button>
+          <button id="backToRegisterBtn" class="btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Registration
+          </button>
+        </div>
+        
+        <div class="email-tip">
+          <i class="fas fa-info-circle"></i>
+          <span>Check your spam folder if you don't see it in 5 minutes</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Page (After Verification) -->
+  <div id="dashboardPage" class="page">
+    <nav class="dashboard-nav">
+      <div class="nav-brand">
+        <i class="fas fa-heartbeat"></i>
+        <span>PreMed Nexus</span>
+      </div>
+      <div class="nav-links">
+        <button class="nav-link active" data-tab="dashboard">
+          <i class="fas fa-home"></i> Dashboard
+        </button>
+        <button class="nav-link" data-tab="modules">
+          <i class="fas fa-graduation-cap"></i> Learning
+        </button>
+        <button class="nav-link" data-tab="forum">
+          <i class="fas fa-comments"></i> Forum
+        </button>
+        <button class="nav-link" data-tab="profile">
+          <i class="fas fa-user"></i> Profile
+        </button>
+      </div>
+      <button id="logoutBtn" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+      </button>
+    </nav>
+
+    <div class="dashboard-content">
+      <!-- Dashboard Tab -->
+      <div id="dashboardTab" class="tab-content active">
+        <div class="welcome-section">
+          <h1>Welcome back, <span id="welcomeName">Healer</span>!</h1>
+          <p>You've taken the first step toward becoming a medical professional. Every day you learn, you're one step closer to saving lives.</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <i class="fas fa-book-open"></i>
+            <div class="stat-info">
+              <h3 id="modulesCompleted">0</h3>
+              <p>Modules Completed</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-trophy"></i>
+            <div class="stat-info">
+              <h3 id="totalPoints">0</h3>
+              <p>Points Earned</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-fire"></i>
+            <div class="stat-info">
+              <h3 id="streakDays">0</h3>
+              <p>Day Streak</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <i class="fas fa-users"></i>
+            <div class="stat-info">
+              <h3 id="forumPosts">0</h3>
+              <p>Forum Contributions</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="recent-activity">
+          <h2><i class="fas fa-clock"></i> Your Journey So Far</h2>
+          <div id="recentActivityList" class="activity-list">
+            <div class="loading-spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Learning Modules Tab -->
+      <div id="modulesTab" class="tab-content">
+        <h2><i class="fas fa-graduation-cap"></i> Learning Modules</h2>
+        <div id="modulesGrid" class="modules-grid">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+
+      <!-- Forum Tab -->
+      <div id="forumTab" class="tab-content">
+        <div class="forum-header">
+          <h2><i class="fas fa-comments"></i> Medical Discussion Forum</h2>
+          <button id="newTopicBtn" class="btn-primary">+ New Discussion</button>
+        </div>
+        <div id="forumTopics" class="forum-topics">
+          <div class="loading-spinner"></div>
+        </div>
+      </div>
+
+      <!-- Profile Tab -->
+      <div id="profileTab" class="tab-content">
+        <div class="profile-container">
+          <div class="profile-header">
+            <div class="profile-avatar">
+              <i class="fas fa-user-md"></i>
+            </div>
+            <div class="profile-info">
+              <h2 id="profileName"></h2>
+              <p id="profileEmail"></p>
+              <div class="badges-container" id="profileBadges"></div>
+            </div>
+          </div>
+          <div class="profile-form">
+            <h3>Update Your Profile</h3>
+            <form id="profileUpdateForm">
+              <div class="input-group floating">
+                <input type="text" id="profileFullName">
+                <label>Full Name</label>
+              </div>
+              <div class="input-group floating">
+                <input type="number" id="profileAge" min="13" max="19">
+                <label>Age</label>
+              </div>
+              <div class="input-group floating">
+                <textarea id="profileBio" rows="3"></textarea>
+                <label>Bio / Medical Interests</label>
+              </div>
+              <button type="submit" class="btn-primary">Update Profile</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New Topic Modal -->
+<div id="newTopicModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Start a New Discussion</h3>
+      <button class="close-modal">&times;</button>
+    </div>
+    <form id="newTopicForm">
+      <div class="input-group floating">
+        <input type="text" id="topicTitle" required>
+        <label>Topic Title</label>
+      </div>
+      <div class="input-group floating">
+        <textarea id="topicContent" rows="5" required></textarea>
+        <label>Discussion Content</label>
+      </div>
+      <div class="input-group">
+        <label>Category</label>
+        <select id="topicCategory">
+          <option value="general">General Medicine</option>
+          <option value="anatomy">Anatomy & Physiology</option>
+          <option value="clinical">Clinical Skills</option>
+          <option value="career">Career Advice</option>
+          <option value="research">Medical Research</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary">Post Discussion</button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+</body>
+</html>
